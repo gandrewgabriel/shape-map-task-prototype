@@ -9,6 +9,10 @@
 <head>
     <title>Map Following Task</title>
     <style>
+        body{
+            padding:0px;
+            margin:0px
+        }
         .cursor-img-container {
             display: flex;
             align-items: center;
@@ -16,8 +20,8 @@
         }
 
         .cursor-image {
-            width: 70px;
-            height: 70px;
+            width: 50px;
+            height: 50px;
         }
 
         .space-image {
@@ -60,22 +64,23 @@
     </style>
 </head>
 
-<body style="background-color: black; overflow: hidden; height: 100vh;">
+<body style="background-color: black; overflow: hidden;">
 
-    <div id="scene-id-entry" style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+    <div id="scene-id-entry" style="display: grid; place-items: center; height: 100vh; ">
         <div>
             <input type="text" class="text-entry" id="player-id-input" placeholder="Enter participant ID">
             <button class="submit-button" onclick="setPlayerID()">Start</button>
         </div>
+
     </div>
 
     <div id="scene-id-instructions"
-        style="overflow-y:scroll; display: none; justify-content: center; align-items: center; flex-direction: column; height:100%">
-        <div style="display: flex; justify-content: center; align-items: center;">
-            <div style="flex:1; margin:20px">
+        style="display: none; margin-top: auto;">
+        <div style="display: flex; justify-content: center; align-items: center; height:100vh">
+            <div style="flex:1; margin:40px;">
                 <img src="img/example.png" alt="example" style="width: 100%;">
             </div>
-            <div style="font-size: 24px; color: lightgray; font-family: sans-serif; flex:2; margin:20px">
+            <div style="font-size: 24px; color: lightgray; font-family: sans-serif; margin-left:20px; margin-right:20px; flex:2; overflow-y: auto; max-height: 90vh;">
                 <p>In this experiment, you will see a square grid containing shapes.</p>
                 <p>Each shape corresponds to a cursor key (up, down, left, or right).</p>
                 <p>The direction assigned to each shape will change every round.</p>
@@ -93,39 +98,41 @@
 
 
     <div id="scene-task" style="height:100vh; display: none;">
-        <h1 id="trial" style="color: darkgray; font-family:sans-serif;">Trial 1 / 10</h1>
+        <div style="height:5%; padding: 20px; display: flex; justify-content: center; flex-wrap: wrap;">
+
+            <h1 id="trial" style="color: darkgray; font-family:sans-serif;">Trial 1 / 10</h1>
+        </div>
 
 
 
-        <div style="height:20%; padding: 20px; display: flex; justify-content: center; flex-wrap: wrap;">
-
+        <div style="height:15%; padding: 20px; display: flex; justify-content: center; flex-wrap: wrap;">
 
             <div class="cursor-img-container">
-                <canvas id="upCanvas" width="70px" height="70px"></canvas>
+                <canvas id="upCanvas" width="50px" height="50px"></canvas>
                 <span class="cursor-text-label">=</span>
                 <img src="img/up.png" alt="up" class="cursor-image">
             </div>
 
             <div class="cursor-img-container">
-                <canvas id="leftCanvas" width="70px" height="70px"></canvas>
+                <canvas id="leftCanvas" width="50px" height="50px"></canvas>
                 <span class="cursor-text-label">=</span>
                 <img src="img/left.png" alt="left" class="cursor-image">
             </div>
 
             <div class="cursor-img-container">
-                <canvas id="downCanvas" width="70px" height="70px"></canvas>
+                <canvas id="downCanvas" width="50px" height="50px"></canvas>
                 <span class="cursor-text-label">=</span>
                 <img src="img/down.png" alt="down" class="cursor-image">
             </div>
 
             <div class="cursor-img-container">
-                <canvas id="rightCanvas" width="70px" height="70px"></canvas>
+                <canvas id="rightCanvas" width="50px" height="50px"></canvas>
                 <span class="cursor-text-label">=</span>
                 <img src="img/right.png" alt="right" class="cursor-image">
             </div>
 
         </div>
-        <div style="height: 40%; padding: 20px">
+        <div style="height: 50%; padding: 20px">
             <canvas id="taskCanvas"></canvas>
         </div>
 
@@ -695,7 +702,7 @@
                 drawMessage("")
             } else if (gameState === "finished") {
                 drawFeedback("Task Completed")
-                drawMessage("Score: " + correctCount.toString() + " / " + grids.length.toString())                
+                drawMessage("Score: " + correctCount.toString() + " / " + grids.length.toString())
             }
 
             const stepCountElement = document.getElementById("stepCount");
