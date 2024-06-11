@@ -1,0 +1,755 @@
+<!-- SIZE OF EVERYTHING NEEDS TO SCALE DOWN WITH SCREEN SIZE -->
+
+
+
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Map Following Task</title>
+    <style>
+        .cursor-img-container {
+            display: flex;
+            align-items: center;
+            margin: 20px;
+        }
+
+        .cursor-image {
+            width: 70px;
+            height: 70px;
+        }
+
+        .space-image {
+            height: 60px;
+            padding: 5px;
+            margin: 5px
+        }
+
+        .cursor-text-label {
+            margin-right: 10px;
+            /* Add some spacing between the image and text */
+            color: lightgrey;
+            font-size: 40px;
+            font-family: sans-serif;
+        }
+
+        .text-entry {
+            padding: 10px;
+            margin: 10px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            font-size: 25px;
+            width: 280px;
+        }
+
+        .submit-button {
+            padding: 10px 20px;
+            margin: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 28px;
+            cursor: pointer;
+        }
+
+        .submit-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body style="background-color: black; overflow: hidden; height: 100vh;">
+
+    <div id="scene-id-entry" style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+        <div>
+            <input type="text" class="text-entry" id="player-id-input" placeholder="Enter participant ID">
+            <button class="submit-button" onclick="setPlayerID()">Start</button>
+        </div>
+    </div>
+
+    <div id="scene-id-instructions"
+        style="overflow-y:scroll; display: none; justify-content: center; align-items: center; flex-direction: column; height:100%">
+        <div style="display: flex; justify-content: center; align-items: center;">
+            <div style="flex:1; margin:20px">
+                <img src="img/example.png" alt="example" style="width: 100%;">
+            </div>
+            <div style="font-size: 24px; color: lightgray; font-family: sans-serif; flex:2; margin:20px">
+                <p>In this experiment, you will see a square grid containing shapes.</p>
+                <p>Each shape corresponds to a cursor key (up, down, left, or right).</p>
+                <p>The direction assigned to each shape will change every round.</p>
+                <p>You will move the <b>white box</b> around the grid using the cursor keys.</p>
+                <p style="font-size: 30px;">Follow the directions specified by the shapes for <u><b>8 steps</b></u>.</p>
+                <br>
+                <p>You will be told if your final position was correct after each round.</p>
+                <p>Each round has a time limit, so follow the shapes as quickly and accurately as possible.</p>
+                <br>
+                <p>Press "Start" to begin.</p>
+                <button class="submit-button" onclick="begin()">Start</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="scene-task" style="height:100vh; display: none;">
+        <h1 id="trial" style="color: darkgray; font-family:sans-serif;">Trial 1 / 10</h1>
+
+
+
+        <div style="height:20%; padding: 20px; display: flex; justify-content: center; flex-wrap: wrap;">
+
+
+            <div class="cursor-img-container">
+                <canvas id="upCanvas" width="70px" height="70px"></canvas>
+                <span class="cursor-text-label">=</span>
+                <img src="img/up.png" alt="up" class="cursor-image">
+            </div>
+
+            <div class="cursor-img-container">
+                <canvas id="leftCanvas" width="70px" height="70px"></canvas>
+                <span class="cursor-text-label">=</span>
+                <img src="img/left.png" alt="left" class="cursor-image">
+            </div>
+
+            <div class="cursor-img-container">
+                <canvas id="downCanvas" width="70px" height="70px"></canvas>
+                <span class="cursor-text-label">=</span>
+                <img src="img/down.png" alt="down" class="cursor-image">
+            </div>
+
+            <div class="cursor-img-container">
+                <canvas id="rightCanvas" width="70px" height="70px"></canvas>
+                <span class="cursor-text-label">=</span>
+                <img src="img/right.png" alt="right" class="cursor-image">
+            </div>
+
+        </div>
+        <div style="height: 40%; padding: 20px">
+            <canvas id="taskCanvas"></canvas>
+        </div>
+
+        <div style="color: lightgray; font-size: 34px; text-align: center; font-family: sans-serif;" id="stepCount">.
+        </div>
+        <!-- <div style="width:100%; height:20%; padding: 20px; display: flex; justify-content: center; flex-wrap: wrap;">
+            <div class="cursor-img-container">
+                <img src="img/space.png" alt="space" class="space-image">
+                <span class="cursor-text-label">= Confirm</span>
+            </div>
+        </div> -->
+    </div>
+
+
+    <script>
+        document.addEventListener('keydown', function (event) {
+            const key = event.key;
+            if (key === 'ArrowUp') {
+                if (gameState === "task") {
+                    move(0, -1)
+                }
+            }
+            if (key === 'ArrowLeft') {
+
+                if (gameState === "task") {
+                    move(-1, 0)
+                }
+            }
+            if (key === 'ArrowDown') {
+
+                if (gameState === "task") {
+                    move(0, 1)
+                }
+            }
+            if (key === 'ArrowRight') {
+
+                if (gameState === "task") {
+                    move(1, 0)
+                }
+            }
+
+        });
+
+        function getTimestamp() {
+            const timestamp = new Date().getTime().toString();
+            return timestamp
+        }
+
+        function logEvent(eventString) {
+            console.log(eventString)
+            dataLog += eventString + "\n"
+        }
+
+        function resizeCanvas() {
+            const canvas = document.getElementById('taskCanvas');
+            fitToContainer(canvas)
+            redraw()
+
+        }
+
+        function mod(n, m) {
+            return ((n % m) + m) % m;
+        }
+
+        function move(x, y) {
+            var timestamp = getTimestamp()
+            var newX = playerX + x
+            var newY = playerY + y
+            playerX = mod(newX, MAX_X + 1)
+            playerY = mod(newY, MAX_Y + 1)
+            stepNumber += 1
+
+            logEvent(`${playerID},move,${trial},${currentMap},${currentGridId},${playerX},${playerY},${timestamp}`)
+            redraw()
+        }
+
+        // Submit the current player position as the attempted solution of the current task
+        function trySolve() {
+            var timestamp = getTimestamp()
+            if (playerX === solution[0] && playerY === solution[1]) {
+                updateGameState("feedback")
+                logEvent(`${playerID},solve_correct,${trial},${currentMap},${currentGridId},${playerX},${playerY},${timestamp}`)
+                correctCount += 1
+                previousCorrect = true
+            } else {
+                updateGameState("feedback")
+                logEvent(`${playerID},solve_incorrect,${trial},${currentMap},${currentGridId},${playerX},${playerY},${timestamp}`)
+                previousCorrect = false
+            }
+            redraw()
+        }
+
+
+
+        function clearCanvas() {
+            var canvas = document.getElementById('taskCanvas');
+            var ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function drawMessage(text) {
+            var canvas = document.getElementById('taskCanvas');
+            var ctx = canvas.getContext('2d');
+            ctx.font = '20px Arial';
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+        }
+
+        function drawFeedback(text) {
+            var canvas = document.getElementById('taskCanvas');
+            var ctx = canvas.getContext('2d');
+            ctx.font = '30px Arial';
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.fillText(text, canvas.width / 2, canvas.height / 4);
+        }
+
+
+        function drawGrid(activeX, activeY) {
+            var canvas = document.getElementById('taskCanvas');
+
+            var scale = Math.min(canvas.width / CANVAS_MAX_W, canvas.height / CANVAS_MAX_H)
+
+            var ctx = canvas.getContext('2d');
+            fitToContainer(canvas);
+
+            var offsetX = (canvas.width - (5 * CELL_SIZE * scale)) / 2
+
+            ctx.fillStyle = COLOUR_ACTIVE;
+            for (var x = 0; x < MAX_X + 1; ++x) {
+                for (var y = 0; y < MAX_Y + 1; ++y) {
+                    if ((x !== activeX) || (y !== activeY)) {
+                        ctx.fillStyle = COLOUR_INACTIVE;
+                        ctx.strokeStyle = "transparent"
+
+                    }
+                    else if ((x === activeX) && (y === activeY)) {
+                        ctx.fillStyle = COLOUR_ACTIVE;
+                        ctx.strokeStyle = 'white';
+                        ctx.lineWidth = 4;
+                    }
+
+                    ctx.fillRect(offsetX + x * CELL_SIZE * scale, y * CELL_SIZE * scale, CELL_SIZE * scale - CELL_PAD * scale, CELL_SIZE * scale - CELL_PAD * scale);
+                    ctx.strokeRect(offsetX + x * CELL_SIZE * scale, y * CELL_SIZE * scale, CELL_SIZE * scale - CELL_PAD * scale, CELL_SIZE * scale - CELL_PAD * scale)
+                }
+            }
+
+            for (var x = 0; x < 5; ++x) {
+                for (var y = 0; y < 5; ++y)
+                    if (currentGrid[y][x] === "t") {
+                        drawTriangle(ctx, offsetX + (x + 0.5) * (CELL_SIZE * scale), (y + 0.5) * CELL_SIZE * scale, SHAPE_SIZE * scale, COLOUR_TRIANGLE)
+                    }
+                    else if (currentGrid[y][x] === "c") {
+                        drawCircle(ctx, offsetX + (x + 0.5) * (CELL_SIZE * scale), (y + 0.5) * CELL_SIZE * scale, SHAPE_SIZE * scale / 2, COLOUR_CIRCLE)
+                    }
+                    else if (currentGrid[y][x] === "p") {
+                        drawPentagon(ctx, offsetX + (x + 0.5) * (CELL_SIZE * scale), (y + 0.5) * CELL_SIZE * scale, SHAPE_SIZE * scale / 2, COLOUR_PENTAGON)
+                    }
+                    else if (currentGrid[y][x] === "s") {
+                        drawSquare(ctx, offsetX + (x + 0.5) * (CELL_SIZE * scale), (y + 0.5) * CELL_SIZE * scale, SHAPE_SIZE * scale, COLOUR_SQUARE)
+                    }
+            }
+
+        }
+
+        function drawTriangle(ctx, x, y, sideLength, color) {
+            const height = Math.sqrt(3) / 2 * sideLength;
+
+            ctx.beginPath();
+            ctx.moveTo(x, y - height / 2);
+            ctx.lineTo(x - sideLength / 2, y + height / 2);
+            ctx.lineTo(x + sideLength / 2, y + height / 2);
+            ctx.closePath();
+
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+
+        function drawCircle(ctx, x, y, radius, color) {
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, 2 * Math.PI);
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+
+        function drawPentagon(ctx, x, y, size, color) {
+            const offset = 0.75 * 2 * Math.PI / 5
+            ctx.beginPath();
+            ctx.moveTo(x + size * Math.cos(0 + offset), y + size * Math.sin(0 + offset));
+
+            for (let i = 1; i <= 5; i++) {
+                ctx.lineTo(x + size * Math.cos(offset + i * 2 * Math.PI / 5), y + size * Math.sin(offset + i * 2 * Math.PI / 5));
+            }
+
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+
+        function drawSquare(ctx, x, y, size, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x - size / 2, y - size / 2, size, size);
+        }
+
+        function drawDirectionIndicators(map) {
+
+            var canvas = document.getElementById('upCanvas');
+            var ctx = canvas.getContext('2d');
+            drawShape(ctx, map[0])
+
+            var canvas = document.getElementById('downCanvas');
+            var ctx = canvas.getContext('2d');
+            drawShape(ctx, map[1])
+
+
+            var canvas = document.getElementById('leftCanvas');
+            var ctx = canvas.getContext('2d');
+            drawShape(ctx, map[2])
+
+            var canvas = document.getElementById('rightCanvas');
+            var ctx = canvas.getContext('2d');
+            drawShape(ctx, map[3])
+
+            function drawShape(ctx, s) {
+                var size = Math.min(canvas.width, canvas.height) * 0.9
+                switch (s) {
+                    case "t":
+                        drawTriangle(ctx, canvas.width / 2, canvas.height / 2, size, COLOUR_TRIANGLE)
+                        break
+                    case "s":
+                        drawSquare(ctx, canvas.width / 2, canvas.height / 2, size, COLOUR_SQUARE)
+                        break
+                    case "c":
+                        drawCircle(ctx, canvas.width / 2, canvas.height / 2, size / 2, COLOUR_CIRCLE)
+                        break
+                    case "p":
+                        drawPentagon(ctx, canvas.width / 2, canvas.height / 2, size / 2, COLOUR_PENTAGON)
+                        break
+                }
+            }
+
+        }
+
+        function clearDirectionIndicators() {
+            var canvas = document.getElementById('upCanvas');
+            var ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            var canvas = document.getElementById('downCanvas');
+            var ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+
+            var canvas = document.getElementById('leftCanvas');
+            var ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            var canvas = document.getElementById('rightCanvas');
+            var ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        }
+
+        var CANVAS_MAX_W = 500
+        var CANVAS_MAX_H = 500
+        var CELL_SIZE = 100
+        var SHAPE_SIZE = 50
+        var CELL_PAD = 10
+
+        var COLOUR_ACTIVE = "rgb(97,103,110)"
+        var COLOUR_INACTIVE = "rgb(61,65,69)"
+        var COLOUR_TRIANGLE = "rgb(63,133,212)"
+        var COLOUR_CIRCLE = "rgb(68,212,159)"
+        var COLOUR_PENTAGON = "rgb(255,77,136)"
+        var COLOUR_SQUARE = "rgb(212,124,66)"
+
+
+
+        // Proceed from player ID screen to task instructions screen
+        function setPlayerID() {
+            var newID = document.getElementById('player-id-input').value
+            console.log(newID)
+            if (newID.length > 0) {
+                var idEntryScene = document.getElementById('scene-id-entry');
+                idEntryScene.style.display = 'none';
+
+                var idInstructionsScene = document.getElementById('scene-id-instructions');
+                idInstructionsScene.style.display = 'flex';
+
+                var taskScene = document.getElementById('scene-task');
+                taskScene.style.display = 'none';
+
+                playerID = newID
+                console.log(playerID)
+                updateGameState("instructions")
+            } else {
+                alert("Please enter a participant ID")
+            }
+
+            resizeCanvas()
+        }
+
+        // Start the main task
+        function begin() {
+            var idEntryScene = document.getElementById('scene-id-entry');
+            idEntryScene.style.display = 'none';
+
+            var idEntryScene = document.getElementById('scene-id-instructions');
+            idEntryScene.style.display = 'none';
+
+            var taskScene = document.getElementById('scene-task');
+            taskScene.style.display = 'block';
+
+            updateGameState("prepare")
+
+            resizeCanvas()
+        }
+
+        // Grids specifying directions
+        // (Shapes are assigned to the directions later)
+        const g3 = [
+            ['u', 'l', 'r', 'r', 'r'],
+            ['d', 'l', 'd', 'l', 'l'],
+            ['d', 't', 'r', 'd', 'u'],
+            ['l', 'r', 'u', 'd', 'u'],
+            ['u', 'r', 'u', 'r', 'r']
+        ];
+
+        const g2 = [
+            ['r', 'r', 'd', 'l', 'l'],
+            ['l', 'l', 'd', 'r', 'd'],
+            ['r', 'u', 'r', 'd', 'd'],
+            ['u', 'u', 'l', 'l', 'd'],
+            ['u', 'd', 'r', 'r', 'r']
+        ];
+
+        const g1 = [
+            ['d', 'd', 'l', 'l', 'l'],
+            ['l', 'r', 'r', 'd', 'u'],
+            ['l', 'r', 'r', 'd', 'l'],
+            ['d', 'u', 'l', 'l', 'r'],
+            ['r', 'u', 'r', 'u', 'u']
+        ];
+
+
+        // Trial setup
+        // [grid ID, up shape, down shape, left shape, right shape, start X position, start Y position]
+        const TRIAL_SCHEDULE = [[1, 's', 't', 'c', 'p', 0, 0],
+        [2, 'p', 's', 'c', 't', 3, 2],
+        [3, 't', 's', 'c', 'p', 1, 4],
+        [1, 's', 'p', 'c', 't', 2, 1],
+        [2, 'p', 't', 'c', 's', 4, 3],
+        [3, 't', 'p', 'c', 's', 2, 4],
+        [1, 's', 't', 'c', 'p', 1, 0],
+        [2, 'p', 's', 'c', 't', 0, 3],
+        [3, 't', 's', 'c', 'p', 3, 2],
+        [1, 's', 'p', 'c', 't', 4, 2],
+        [2, 'p', 't', 'c', 's', 1, 0],
+        [3, 't', 'p', 'c', 's', 2, 3],
+        [1, 's', 't', 'c', 'p', 3, 4],
+        [2, 'p', 's', 'c', 't', 1, 2],
+        [3, 't', 's', 'c', 'p', 0, 0],
+        [1, 's', 'p', 'c', 't', 3, 1],
+        [2, 'p', 't', 'c', 's', 2, 4],
+        [3, 't', 'p', 'c', 's', 4, 3]]
+
+
+
+
+        // Convert a grid of directions to a grid of shapes under the specified mapping (array of ["s", "t", "c", "p"])
+        function dirGridToShapeGrid(map, grid) {
+            const rows = 5;
+            const cols = 5;
+            let shapeGrid = Array.from({ length: rows }, () => Array.from({ length: cols }, () => ""));
+
+            for (let x = 0; x < cols; x++) {
+                for (let y = 0; y < rows; y++) {
+                    let s = "t"
+                    switch (grid[x][y]) {
+                        case "u":
+                            s = map[0]
+                            break
+                        case "d":
+                            s = map[1]
+                            break
+                        case "l":
+                            s = map[2]
+                            break
+                        case "r":
+                            s = map[3]
+                            break
+                    }
+                    shapeGrid[x][y] = s
+                }
+            }
+            return shapeGrid
+        }
+
+        // Compute the solution to the given direction grid, starting from the specified 
+        // coordinates and moving for the given number of steps
+        function computeSolution(dirGrid, steps, startX, startY) {
+            var newX = startX
+            var newY = startY
+
+            var i = 0
+            while (i < steps) {
+                var dir = dirGrid[newY][newX]
+                var stepX = 0
+                var stepY = 0
+                if (dir == "u") {
+                    stepY = -1
+                }
+                else if (dir == "d") {
+                    stepY = 1
+                }
+                else if (dir == "l") {
+                    stepX = -1
+                }
+                else if (dir == "r") {
+                    stepX = 1
+                }
+                newX += stepX
+                newY += stepY
+                newX = mod(newX, MAX_X + 1)
+                newY = mod(newY, MAX_Y + 1)
+                i += 1
+            }
+            return [newX, newY]
+        }
+
+
+        // Game State
+        const STEPS_PER_TRIAL = 8
+        const MAIN_TRIAL_TIME = 8
+        const MAPPING_PREVIEW_TIME = 4
+        const REST_TIME = 3
+        var MAX_X = 4
+        var MAX_Y = 4
+
+        var playerID = "test_player"
+        var trial = 1
+        var playerX = 0
+        var playerY = 0
+        var stepNumber = 0
+        var dataLog = ""
+        var correctCount = 0
+        var previousCorrect = false
+
+
+        // Set up the trials
+        var uniqueGrids = [g1, g2, g3]
+        var dirGrids = []
+        var maps = []
+        var startPositions = []
+        for (row of TRIAL_SCHEDULE) {
+            dirGrids.push(uniqueGrids[row[0] - 1])
+            maps.push([row[1], row[2], row[3], row[4]])
+            startPositions.push([row[5], row[6]])
+        }
+        var grids = []
+        var solutions = []
+        for (let i = 0; i < startPositions.length; i++) {
+            grids.push(dirGridToShapeGrid(maps[i], dirGrids[i]))
+            solutions.push(computeSolution(dirGrids[i], STEPS_PER_TRIAL, startPositions[i][0], startPositions[i][1]))
+        }
+
+        // Current trial state
+        var currentGrid = grids[trial - 1]
+        var currentGridId = TRIAL_SCHEDULE[trial - 1][0]
+        var currentMap = maps[trial - 1]
+        var solution = solutions[trial - 1]
+        var currentStartPosition = startPositions[trial - 1]
+        // insertId, prepare, task, feedback, finished
+        var gameState = "insertId"
+
+
+
+
+        function updateGameState(newState) {
+            switch (newState) {
+                case "insertID":
+                    return
+                case "prepare":
+                    gameState = "prepare"
+                    redraw()
+                    setTimeout(function () {
+                        updateGameState("task")
+                        var timestamp = getTimestamp()
+                        logEvent(`${playerID},show_grid,${trial},${currentMap},${currentGridId},${playerX},${playerY},${timestamp}`)
+                        redraw()
+                    }, REST_TIME * 1000);
+                    return
+                case "task":
+                    gameState = "task"
+                    console.log(currentGrid)
+                    redraw()
+                    setTimeout(function () {
+                        trySolve()
+                        redraw()
+                    }, MAIN_TRIAL_TIME * 1000);
+                    return
+                case "feedback":
+                    gameState = "feedback"
+                    redraw()
+                    setTimeout(function () {
+                        nextTrial()
+                        redraw()
+                    }, REST_TIME * 1000);
+                    return
+                case "finished":
+                    gameState = "finished"
+                    redraw()
+                    return
+            }
+        }
+
+        function nextTrial() {
+            var timestamp = getTimestamp()
+
+            if (trial < grids.length) {
+                trial += 1
+                currentGrid = grids[trial - 1]
+                currentGridId = TRIAL_SCHEDULE[trial - 1][0]
+                currentMap = maps[trial - 1]
+                solution = solutions[trial - 1]
+                currentStartPosition = startPositions[trial - 1]
+                playerX = currentStartPosition[0]
+                playerY = currentStartPosition[1]
+                stepNumber = 0
+                updateGameState("prepare")
+                logEvent(`${playerID},next_trial,${trial},${currentMap},${currentGridId},${playerX},${playerY},${timestamp}`)
+            } else {
+                updateGameState("finished")
+                logEvent(`${playerID},finished,${trial},${currentMap},${currentGridId},${playerX},${playerY},${timestamp}`)
+            }
+
+            redraw()
+        }
+
+
+        function fitToContainer(canvas) {
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+
+        function redraw() {
+            clearCanvas()
+            clearDirectionIndicators()
+
+            if (gameState === "task") {
+                drawGrid(playerX, playerY)
+                drawDirectionIndicators(currentMap)
+            } else if (gameState === "prepare") {
+                drawMessage("Get Ready...")
+                drawDirectionIndicators(currentMap)
+
+            } else if (gameState === "feedback") {
+                var m = "Correct!"
+                if (previousCorrect == false) {
+                    m = "Incorrect"
+                }
+                drawFeedback(m)
+                drawMessage("")
+            } else if (gameState === "finished") {
+                drawFeedback("Task Completed")
+                drawMessage("Score: " + correctCount.toString() + " / " + grids.length.toString())
+
+                saveData()
+            }
+
+            const stepCountElement = document.getElementById("stepCount");
+            stepCountElement.innerText = (STEPS_PER_TRIAL - stepNumber).toString() + " steps remaining"
+
+            const trialNumberElement = document.getElementById("trial");
+            trialNumberElement.innerText = "Trial " + trial.toString() + " / " + (grids.length.toString())
+        }
+
+
+        function downloadCSV(data, filename) {
+            const file = new Blob([data], { type: "text/plain" });
+
+            // Create a temporary URL for the file
+            const fileURL = URL.createObjectURL(file);
+
+            // Create a temporary anchor element
+            const a = document.createElement('a');
+            a.href = fileURL;
+            a.download = filename;
+
+            // Append the anchor element to the body and trigger the download
+            document.body.appendChild(a);
+            a.click();
+
+            // Clean up
+            window.URL.revokeObjectURL(fileURL);
+            document.body.removeChild(a);
+        }
+
+        // Saving data to CSV file
+        function saveData() {
+            downloadCSV(dataLog, playerID.toString() + "_shape_map_task.csv")
+            console.log(dataLog)
+        }
+
+        // Initial sizing of the canvas
+        var canvas = document.getElementById('taskCanvas');
+        ctx = canvas.getContext('2d');
+        fitToContainer(canvas);
+
+        // Log the task start time
+        var timestamp = getTimestamp()
+        logEvent(`participant_id,event_type,trial_number,current_map_up,current_map_down,current_map_left,current_map_right,player_x,player_y,timestamp`)
+        logEvent(`unnamed_participant,begin_session,${trial},${currentMap},${currentGridId},${playerX},${playerY},${timestamp}`)
+        redraw()
+
+        // Resize the canvas when the window size changes (in case the window is maximised during the game)
+        window.addEventListener('resize', resizeCanvas);
+
+
+    </script>
+
+</body>
+
+</html>
